@@ -1,6 +1,11 @@
+import asyncio
 from fastapi import FastAPI, Request
-from db.base_models.base import get_session
-from db.bd_handlers import service
+import uvicorn
+from app.utils.base import get_session
+from service import db_service
+from bot import send_messege, send_video
+
+import os
 
 from movie_maker.moviemaker import MovieMaker
 
@@ -10,14 +15,16 @@ from random import randint
 app = FastAPI()
 
 
-@app.post("/alarm/")
+@app.post("/alarm")
 async def alarm_send(request: Request):
     request_data = request.json
     alarm_time = datetime.now()
     try:
         place_id = request_data["place"]
         with get_session() as session:
-            data = service.get_place(session, place_id) # получаем необходимые данные из таблицы
+            data = db_service.get_place(
+                session, place_id
+            )  # получаем необходимые данные из таблицы
             place = data[0]  # Получение места аварии
             camera = eval(data[1])  # Получение настроек камеры
     except ImportError:
@@ -29,7 +36,7 @@ async def alarm_send(request: Request):
     try:
         with get_session() as session:
             alarm_id = int(request_data["alarm_text"])
-            data = service.get_alarm(session, alarm_id)
+            data = db_service.get_alarm(session, alarm_id)
             alarm_text = data[0]  # Получение места аварии
             need_movie = bool(data[1])
     except ImportError:
@@ -70,8 +77,18 @@ async def alarm_send(request: Request):
         # Открытие файла видео
         video = open(f"/media/{fime_name}.mp4", "rb")
 
+        # Отправка сообщения
+        asyncio.run(send_video(video, caption=f"{message}"))
 
-@app.post("/statistic/")
+        # Удаление файла видео
+        os.remove(f"/media/{fime_name}.mp4")
+    else:
+        # Отправка обычного сообщения
+        asyncio.run(send_messege(message))
+    return request_data
+
+
+@app.post("/statistic")
 async def statistic(request: Request):
     request_data = request.json
 
@@ -83,11 +100,36 @@ async def statistic(request: Request):
     try:
         with get_session() as session:
             place_id = request_data["place"]
-            data = service.get_place(session, place_id)
+            data = db_service.get_place(session, place_id)
             place = data[0]  # Получение места аварии
     except ImportError:
         place = (
             f'place = {request_data["place"]} типа {type(request_data["place"])} - не найден, '
             f"необходимо добавить в БД или изменить в PLC"
         )
-    # cборка сообщения
+    # Определение параметров
+    if "item_counter_robot" in request_data:
+        item_counter_robot = request_data["item_counter_robot"]
+    if "item_counter_machine" in request_data:
+        item_counter_machine = request_data["item_counter_machine"]
+    if "alarm_counter" in request_data:
+        alarm_counter = request_data["alarm_counter"]
+
+    # Отправка сообщения
+    try:
+        asyncio.run(
+            send_messege(
+                f"Место:  {place}\n",
+                f"Робот переложил:  {item_counter_robot}\n",
+                f"Станок обработал:  {item_counter_machine}\n",
+                f"Ошибок на роботе:  {alarm_counter}",
+            )
+        )
+
+    except ImportError:
+        asyncio.run(send_messege(f"Не корректный формат сообщения", f"{request_data}"))
+    return request_data
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=6002)

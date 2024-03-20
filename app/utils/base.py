@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
-from ...config_data.config import Config, load_config
+from app.controllers.controller_settings import Config, load_config
 
 connect: Config = load_config("~\.env")
 
