@@ -1,0 +1,10 @@
+aiohttp==3.9.3
+asyncio==3.4.3
+asyncpg==0.29.0
+fastapi==0.110.0
+pydantic==2.5.3
+python-dotenv==1.0.1
+requests==2.31.0
+SQLAlchemy==2.0.28
+uvicorn==0.29.0
+msgpack==1.0.8

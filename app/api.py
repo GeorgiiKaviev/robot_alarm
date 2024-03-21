@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 import uvicorn
 from app.utils.base import get_session
 from service import db_service
-from bot import send_messege, send_video
+from app.bot_service import send_messege, send_video
 
 import os
 
