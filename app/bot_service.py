@@ -4,7 +4,7 @@ from app.controllers.controller_settings import Config, load_config
 
 connect: Config = load_config()
 token = connect.tg_bot.token
-chat_id = connect.tg_bot.token
+chat_id = connect.tg_bot.chat_id
 type_send = ("sendmessege", "sendvideo")
 
 URL = f"https://api.telegram.org/bot{token}/getMe"
